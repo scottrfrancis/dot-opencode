@@ -1,0 +1,86 @@
+{
+  // dot-opencode global config — mirror of the ~/.claude settings.json posture,
+  // adapted to OpenCode's schema. See README.md for the full Claude Code → OpenCode
+  // feature map. Theme and keybinds live in tui.json (OpenCode keeps TUI config
+  // separate from this file).
+  "$schema": "https://opencode.ai/config.json",
+
+  // ----------------------------------------------------------------------------
+  // Models — offline-capable. Default is the remote RTX 4000 Ada box (dev-ai);
+  // the local LM Studio provider is the disconnected fallback. Switch at runtime
+  // with /models  (or set "model" below to "local/qwen3-coder-30b").
+  // ----------------------------------------------------------------------------
+  "model": "dev-ai/gpt-oss:20b",
+  "small_model": "dev-ai/qwen2.5-coder:14b",
+
+  "provider": {
+    "dev-ai": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "RTX 4000 Ada (remote)",
+      "options": { "baseURL": "http://dev-ai.local:11434/v1" },
+      "models": {
+        "gpt-oss:20b":       { "name": "GPT-OSS 20B",       "tools": true },
+        "qwen3-coder:30b":   { "name": "Qwen3 Coder 30B",   "tools": true },
+        "qwen2.5-coder:14b": { "name": "Qwen2.5 Coder 14B", "tools": true }
+      }
+    },
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Razer (LM Studio)",
+      "options": { "baseURL": "http://localhost:1234/v1" },
+      "models": {
+        "qwen3-coder-30b": { "name": "Qwen3 Coder 30B MoE (local)", "tools": true }
+      }
+    }
+    // To add Ollama on this machine, uncomment:
+    // ,"ollama": {
+    //   "npm": "@ai-sdk/openai-compatible",
+    //   "name": "Ollama (local)",
+    //   "options": { "baseURL": "http://localhost:11434/v1" },
+    //   "models": { "qwen2.5-coder:7b": { "name": "Qwen2.5 Coder 7B", "tools": true } }
+    // }
+  },
+
+  // ----------------------------------------------------------------------------
+  // Permissions — mirrors the ~/.claude/settings.json allowlist posture:
+  // ask by default, auto-allow the safe git/find/read commands, hard-deny the
+  // destructive ones. The safety.js plugin enforces the denies a second time
+  // at tool.execute.before (defense in depth, matching pre-tool-safety.sh).
+  // OpenCode evaluates bash patterns "last match wins" — keep denies last.
+  // ----------------------------------------------------------------------------
+  "permission": {
+    "edit": "ask",
+    "webfetch": "allow",
+    "bash": {
+      "*": "ask",
+      "find *": "allow",
+      "ls *": "allow",
+      "cat *": "allow",
+      "git status": "allow",
+      "git status *": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "git fetch *": "allow",
+      "git config *": "allow",
+      "git stash *": "allow",
+      "git add *": "allow",
+      "git commit *": "allow",
+      "git push *": "allow",
+      "git checkout *": "allow",
+      "rm -rf *": "deny",
+      "rm -fr *": "deny",
+      "git reset --hard *": "deny",
+      "git push --force *": "deny",
+      "git push -f *": "deny"
+    }
+  }
+
+  // ----------------------------------------------------------------------------
+  // MCP servers: none configured in the base. Add under an "mcp" key, e.g.
+  //   "mcp": { "fetch": { "type": "local", "command": ["uvx","mcp-server-fetch"], "enabled": true } }
+  // ----------------------------------------------------------------------------
+
+  // Instructions: AGENTS.md (this repo) auto-loads as global rules. The
+  // guidelines/ are referenced on-demand from AGENTS.md (kept OUT of the
+  // always-on context, exactly like the ~/.claude CLAUDE.md → guidelines split).
+}

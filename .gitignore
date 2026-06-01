@@ -1,0 +1,27 @@
+# Dependencies / lockfiles (plugin SDK is restored by `bun install` / `npm install`)
+node_modules/
+package-lock.json
+bun.lock
+bun.lockb
+
+# OpenCode runtime state (when this repo is symlinked as ~/.config/opencode)
+auth.json
+.auth.json
+cache/
+storage/
+log/
+logs/
+sessions/
+session-logs/
+tui/
+
+# Local-only secrets / credentials
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+
+# OS cruft
+.DS_Store
+Thumbs.db

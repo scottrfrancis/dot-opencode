@@ -1,0 +1,8 @@
+{
+  "name": "dot-opencode",
+  "private": true,
+  "description": "Personal OpenCode global config — plugins, commands, agents, guidelines (mirror of dot-claude)",
+  "dependencies": {
+    "@opencode-ai/plugin": "1.15.12"
+  }
+}
