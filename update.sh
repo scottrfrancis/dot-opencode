@@ -28,6 +28,12 @@ if ! git pull --ff-only; then
   exit 1
 fi
 
+# Fail fast on a malformed config rather than let OpenCode crash at startup.
+if ! ./scripts/validate.sh; then
+  echo "✗ config validation failed — fix the file above before launching OpenCode." >&2
+  exit 1
+fi
+
 # Copy-mode installs need a re-copy; symlink installs are already live.
 if [ -e "$TARGET/AGENTS.md" ] && [ ! -L "$TARGET/AGENTS.md" ]; then
   echo "▶ copy-mode install detected — re-copying into $TARGET"

@@ -23,6 +23,16 @@ try {
   git pull --ff-only
   if ($LASTEXITCODE -ne 0) { Write-Host "x pull failed (diverged?). Resolve manually."; exit 1 }
 
+  # Fail fast on a malformed config rather than let OpenCode crash at startup.
+  $py = Get-Command python3 -ErrorAction SilentlyContinue
+  if (-not $py) { $py = Get-Command python -ErrorAction SilentlyContinue }
+  if ($py) {
+    & $py.Source (Join-Path $Repo "scripts/validate.py")
+    if ($LASTEXITCODE -ne 0) { Write-Host "x config validation failed - fix the file above before launching OpenCode."; exit 1 }
+  } else {
+    Write-Host "  (python not found - skipping config check)"
+  }
+
   # Copy-mode installs need a re-copy; symlink installs are already live.
   $agents = Join-Path $Target "AGENTS.md"
   $isCopy = (Test-Path $agents) -and -not (Get-Item $agents -Force).LinkType

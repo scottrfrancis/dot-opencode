@@ -41,6 +41,11 @@ cd ~/workspace/dot-opencode && ./install.sh
 ./update.sh                  #   or, native Windows PowerShell:  ./update.ps1
 ```
 
+> **After hand-editing `opencode.jsonc` or `tui.json`, run `./scripts/validate.sh`.** A JSON
+> syntax error (a stray comma, a missing colon) otherwise surfaces only as a cryptic
+> "Unexpected server error" at OpenCode startup — the validator names the exact line instead.
+> `update.sh` runs this check automatically after every pull.
+
 **Why symlink mode matters for updates.** `install.sh` symlinks each top-level item
 (`commands/`, `guidelines/`, `opencode.jsonc`, …) into `~/.config/opencode`. Because the
 *directories* are symlinked, a plain `git pull` makes every changed or **new** command and
@@ -125,7 +130,7 @@ dot-opencode/
 │   └── safety.js         # the 4 ~/.claude hooks consolidated into one plugin
 ├── guidelines/           # on-demand reference standards (verbatim from dot-claude)
 ├── guides/               # transition + setup docs (opencode-from-claude, mac-mlx-opencode)
-├── scripts/              # account-context.sh, mlx-serve.sh (on-device MLX launcher)
+├── scripts/              # account-context.sh, mlx-serve.sh (MLX launcher), validate.sh (config check)
 └── themes/               # custom TUI themes (empty; drop *.json here)
 ```
 
