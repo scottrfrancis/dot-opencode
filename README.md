@@ -27,6 +27,44 @@ already there, then runs `bun install` (or `npm install`) so the safety plugin c
 > The installer never touches your existing live config destructively — real files are moved
 > to `<name>.bak.<timestamp>` before a symlink is placed.
 
+## Installing & updating on multiple machines
+
+This repo is built to be cloned on several machines (the M4 Pro MacBook, the Razer 14) and
+kept current with `git pull`. The workflow:
+
+```bash
+# once per machine — clone anywhere consistent, then install (symlink mode)
+git clone git@github.com:scottrfrancis/dot-opencode.git ~/workspace/dot-opencode
+cd ~/workspace/dot-opencode && ./install.sh
+
+# anytime, to pull updates
+./update.sh                  #   or, native Windows PowerShell:  ./update.ps1
+```
+
+**Why symlink mode matters for updates.** `install.sh` symlinks each top-level item
+(`commands/`, `guidelines/`, `opencode.jsonc`, …) into `~/.config/opencode`. Because the
+*directories* are symlinked, a plain `git pull` makes every changed or **new** command and
+guideline live instantly — no reinstall. `update.sh` wraps that: it refuses to pull over local
+edits, fast-forwards, then re-links (catching any brand-new top-level item) and reinstalls the
+plugin SDK. Use `--copy` / `-Copy` only where symlinks are blocked (some locked-down Windows);
+there, `update.sh` re-copies on each pull.
+
+### What's shared vs. per-machine
+
+**Everything tracked here is shared and machine-agnostic** — both machines run the same
+`opencode.jsonc`, commands, and guidelines. The providers differ only in *what's reachable*:
+
+| Provider | MacBook (M4 Pro) | Razer 14 | Shared |
+| -------- | ---------------- | -------- | ------ |
+| `dev-ai` (remote Ollama) | ✓ | ✓ | **default, both** |
+| `mlx` (on-device) | ✓ Apple-Silicon only | — | — |
+| `local` (LM Studio) | — | ✓ | — |
+
+A provider that isn't serving on a given machine is simply unused (it only errors if you
+select it). **Don't edit `opencode.jsonc` per machine** — that causes pull conflicts. To run
+on a local model when off-network, switch at runtime with `/models`; OpenCode remembers the
+choice per project in its (gitignored) state dir, so it never touches the tracked config.
+
 ## Models (offline-capable, capability-first)
 
 Configured in `opencode.jsonc`:
@@ -80,6 +118,7 @@ dot-opencode/
 ├── AGENTS.md             # global rules, loaded every session (≈ CLAUDE.md)
 ├── package.json          # pins @opencode-ai/plugin for the safety plugin
 ├── install.sh / .ps1     # symlink (or --copy) into ~/.config/opencode
+├── update.sh  / .ps1     # git pull --ff-only + re-link/reinstall (per-machine updates)
 ├── commands/             # /slash commands (ported from ~/.claude/commands)
 ├── agents/               # subagents (e.g. code-reviewer)
 ├── plugins/
