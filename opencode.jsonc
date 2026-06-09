@@ -55,6 +55,10 @@
         "default_model": { "name": "Default MLX Model", "tools": true }
       }
     },
+    // Razer LM Studio. ⚠️ Set Context Length = 32768 in LM Studio's model load
+    // settings — its 4K-8K default overflows OpenCode's tool defs and silently
+    // breaks tool-calling (model chats, never edits). See README → "Set the
+    // context window ≥ 32K on every local backend".
     "local": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Razer (LM Studio)",

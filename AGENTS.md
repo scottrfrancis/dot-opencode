@@ -1,126 +1,73 @@
 # AGENTS.md — Global OpenCode Guidelines
 
-Global instructions loaded into every OpenCode session (the OpenCode analogue of
-`~/.claude/CLAUDE.md`). This is the `dot-opencode` base, installed to
-`~/.config/opencode/`. Per-project `AGENTS.md` files extend this foundation with
-domain-specific context. Keep this file as a stable base class — project files carry
-the specifics.
+Global instructions loaded into **every** OpenCode session (the OpenCode analogue of
+`~/.claude/CLAUDE.md`). Kept deliberately lean — this file is in context on every turn,
+so it carries only behavioral rules and pointers. Reference detail (the full command and
+guideline indexes, the Claude Code → OpenCode feature map) lives in `README.md`, which is
+**not** loaded into context. Per-project `AGENTS.md` files extend this base.
 
-> Ported from the `dot-claude` (`~/.claude`) setup. OpenCode also auto-reads
-> `~/.claude/CLAUDE.md` as a fallback, so the two stay broadly in sync, but this file
-> is the canonical OpenCode copy and is what you should edit for OpenCode behavior.
+> Ported from `dot-claude` (`~/.claude`). OpenCode also auto-reads `~/.claude/CLAUDE.md`
+> as a fallback, but this file is the canonical OpenCode copy.
 
-## Branch Policy and Strategy
+## Branch Policy
 
-The user works across multiple repositories with different policies. The user is
-forgetful about syncing the local repo at the start of a session.
-
-REMIND the user to consider the appropriate branching strategy when starting a session
-or a series of tasks. Include:
-
-- current branch and status
-- suggestions to pull, push, create, or delete branches
-
-When asked to push to a repo, suggest a new branch if the current branch is the default
-(main/master).
+The user works across many repos with different policies and is forgetful about syncing at
+session start. REMIND them to consider branching strategy when starting a session or a task
+series — current branch and status, and whether to pull, push, create, or delete branches.
+When asked to push, suggest a new branch if the current branch is the default (main/master).
 
 ## Session Safety (CRITICAL)
 
-**ALWAYS follow `~/.config/opencode/guidelines/session-safety.md`** when working on
-hardware development systems. Multiple agent sessions accessing NPU/GPU devices
-simultaneously cause device contention, resource leakage, and complete context loss
-requiring a system restart.
+When working on hardware (NPU/GPU) development systems, **follow
+`~/.config/opencode/guidelines/session-safety.md`**: run session cleanup, verify device
+availability, and ensure exclusive access first. Concurrent sessions cause device contention
+and context loss requiring a restart.
 
-**Before every hardware session**: run session cleanup, verify device availability, and
-ensure exclusive hardware access.
+## Guidelines (on-demand)
 
-## Active Guidelines
+On-demand reference standards in `~/.config/opencode/guidelines/`. Read the relevant one
+**before** the matching task — they are NOT auto-loaded (kept out of context on purpose).
+Filenames are self-describing; topics:
 
-On-demand reference standards. Read the relevant one before the matching task — they are
-NOT auto-loaded into context (kept lean on purpose). Files live in
-`~/.config/opencode/guidelines/`:
+`shell-scripts` · `shell-escaping` · `conventional-commits` · `readme-documentation` ·
+`markdown-formatting` · `session-safety` (CRITICAL) · `ai-patterns` · `project-setup` ·
+`prose-style` · `prototype-hygiene` · `security-hardening` · `golang` · `testing` ·
+`ci-local-parity` · `docx-conversion` · `karpathy-principles` · `2x2-status-report` ·
+`C4-diagramming` · `pr-token-tracking`
 
-- **shell-scripts.md** — directory management, error handling, portability
-- **conventional-commits.md** — standardized commit message format
-- **readme-documentation.md** — README as central documentation hub
-- **session-safety.md** — **CRITICAL** — prevent session hangs / context loss on hardware
-- **ai-patterns.md** — LLM integration: caching, routing, guardrails, RAG
-- **project-setup.md** — tiered checklist for bootstrapping new projects
-- **prose-style.md** — anti-AI-smell rules for narrative writing
-- **prototype-hygiene.md** — ship clean: config over code, stable docs, PRs over branches
-- **security-hardening.md** — defense-in-depth patterns grounded in breach analysis
-- **golang.md** — Go: JSON response safety, gosec patterns, G104 triage
-- **testing.md** — test pyramid, mocking, CI integration
-- **ci-local-parity.md** — run exact CI commands locally before pushing
-- **docx-conversion.md** — python-docx over pandoc; palette, typography
-- **karpathy-principles.md** — surface assumptions, match existing style, read before you write
-- **2x2-status-report.md** — quad-chart weekly status format
-- **shell-escaping.md** — shell quoting, TTY handling
-- **C4-diagramming.md** — C4 Model PlantUML organization
-- **markdown-formatting.md** — spacing and list formatting standards
-- **pr-token-tracking.md** — PR token accounting
+See README for the annotated index.
 
 ## Commands
 
-Global slash commands live in `~/.config/opencode/commands/` (one markdown file per
-command). Invoke with `/<name>`.
+Global slash commands in `~/.config/opencode/commands/` — invoke with `/<name>`:
 
-### Session Management
+`/lets-go` · `/handoff` · `/pickup` · `/session-logger` · `/mine-sessions` · `/autocommit` ·
+`/arch-review` · `/doc-review` · `/editorial-review` · `/security-audit` ·
+`/review-pr` · `/babysit-pr` · `/build-pdf`
 
-| Command | Purpose |
-| ------- | ------- |
-| `/lets-go [role with task]` | Initialize a session: plugin health check, git sync protocol, load project docs, surface handoffs |
-| `/session-logger [topic]` | Structured session summary with effectiveness assessment; cross-links to previous log |
-| `/handoff [topic notes]` | Forward-looking continuation prompt for the next session |
-| `/pickup` | Resume from the most recent handoff; archive it so it isn't re-injected |
-| `/mine-sessions [days:N] [save]` | Analyze session logs for patterns, metrics, process improvements |
-
-### Git and Code Quality
-
-| Command | Purpose |
-| ------- | ------- |
-| `/autocommit [-n] [-t type]` | Stage tracked changes, commit with a generated conventional message |
-| `/arch-review` | Principal Architect review framework |
-| `/extract-adr` | Convert logged decisions into ADRs |
-| `/doc-review` | Audit documentation for accuracy, DRY, clarity; commit on a docs branch |
-| `/editorial-review [style]` | Audit prose for AI tells; refine toward a voice/style |
-| `/security-audit` | Breach-driven security audit for web apps |
-| `/review-pr [PR or branch]` | Review a PR diff: bugs, security, missing tests, style |
-| `/babysit-pr <PR>` | Monitor a PR for checks, reviews, merge readiness |
-| `/build-pdf [report.yaml]` | Build a PDF from markdown sections |
+See README for per-command purpose and which are suited to local vs remote/cloud models.
 
 ## Plugin (the hooks equivalent)
 
-OpenCode has no shell-hook contract like Claude Code's SessionStart/PreToolUse/Stop.
-The single plugin `~/.config/opencode/plugins/safety.js` provides the equivalents:
-
-- `tool.execute.before` — **blocks** destructive bash (`rm -rf`, `git reset --hard`,
-  `git push --force`, force worktree removal, redirects into sensitive config). Throws to
-  abort the tool call.
-- `chat.message` — injects the most recent `handoff-*.md` once per session (≈ SessionStart
-  auto-load) and archives it.
-- `event: session.idle` — reminds about `/session-logger` (3+ files changed) and `/handoff`
-  (5+ files changed).
-
-Permissions are enforced separately in `opencode.jsonc` under `permission` (ask by default;
-safe git/find/read auto-allowed; destructive denied). The plugin's block is defense in depth.
+`~/.config/opencode/plugins/safety.js` replaces Claude Code's shell hooks: it **blocks**
+destructive bash (`rm -rf`, `git reset --hard`, force-push, sensitive-config redirects) at
+`tool.execute.before`, injects the newest `handoff-*.md` once per session, and nudges
+`/session-logger` / `/handoff` on idle. Permissions are enforced separately in
+`opencode.jsonc` (`permission`); the plugin's block is defense in depth.
 
 ## Memory Convention
 
-OpenCode has no built-in persistent memory store. Keep the `dot-claude` convention: a
-project's durable, non-obvious context lives in `<project>/.opencode/memory/MEMORY.md`
-(or `.claude/memory/MEMORY.md` if shared with Claude Code) — one line per fact, pointing at
-detail files. Don't record what the repo already captures (code structure, git history).
+OpenCode has no built-in memory store. Keep the `dot-claude` convention: a project's durable,
+non-obvious context lives in `<project>/.opencode/memory/MEMORY.md` (or `.claude/memory/` if
+shared with Claude Code) — one line per fact, pointing at detail files. Don't record what the
+repo already captures (code structure, git history).
 
 ## Cross-Tool Session Protocol
 
-Session logs are written to `session-logs/` at the project root — a shared location read by
-Claude Code, Cursor, Copilot, Droid, and OpenCode. Legacy locations (`.opencode/session-logs/`,
-`.claude/session-logs/`, `.factory/logs/`) are searched as fallbacks.
-
-All session logs and handoff files carry YAML frontmatter with a `tool:` field. OpenCode
-sessions write `tool: opencode`. This enables cross-tool continuity — a handoff written in
-Claude Code can be picked up in OpenCode, and vice versa.
+Session logs and handoffs go in `session-logs/` at the project root — a shared location read
+by Claude Code, Cursor, Copilot, Droid, and OpenCode (legacy: `.opencode/session-logs/`,
+`.claude/session-logs/`, `.factory/logs/`). Every file carries YAML frontmatter with a
+`tool:` field; OpenCode writes `tool: opencode`. This enables cross-tool continuity.
 
 ## Global Behavioral Rules
 
@@ -134,10 +81,3 @@ Claude Code can be picked up in OpenCode, and vice versa.
 - When the user reports a PR has been merged, prompt them to update the local repo (pull,
   delete merged branch).
 - When asked to push to a repo, suggest a new branch if the current branch is the default.
-
-## Notes on Parity
-
-OpenCode does **not** support a Claude Code-style `statusLine` command. The account-context
-banner (`scripts/account-context.sh`) is kept for reference and for the `/lets-go` git-sync
-output, but it does not render in the OpenCode status bar. See `README.md` for the full
-Claude Code → OpenCode feature map.

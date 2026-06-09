@@ -59,6 +59,18 @@ the 24 GB memory budget, the thinking-mode toggle, and troubleshooting.
 ~/.config/opencode/scripts/mlx-serve.sh    # Apple Silicon only; needs `pip install mlx-lm`
 ```
 
+### ⚠️ Set the context window ≥ 32K on every local backend
+
+OpenCode's system prompt + tool definitions + `AGENTS.md` consume **~7–10K tokens before any
+work** — and they *overflow small default context windows*, at which point tool-calling
+silently breaks (the model chats but never edits, with no error). Configure each backend:
+
+| Backend | Default | Fix |
+| ------- | ------- | --- |
+| Ollama (`dev-ai`) | 4K | `OLLAMA_CONTEXT_LENGTH=32768` on the rig (or `num_ctx 32768` in a Modelfile) |
+| LM Studio (`local`, Razer) | 4K–8K | Set **Context Length = 32768** in the model load settings before serving |
+| MLX (`mlx`, Mac) | model native (Qwen3 = 32K) | No flag needed, but the 3 GiB KV ceiling caps *warm* cache at ~20K tokens — keep sessions and commands lean (see the guide's budget section) |
+
 ## Repository layout
 
 ```text
@@ -112,14 +124,79 @@ dot-opencode/
 
 ## Commands
 
-`/lets-go`, `/handoff`, `/pickup`, `/session-logger`, `/mine-sessions`, `/autocommit`,
-`/arch-review`, `/extract-adr`, `/doc-review`, `/editorial-review`, `/security-audit`,
-`/review-pr`, `/babysit-pr`, `/build-pdf`. See `AGENTS.md` for the table, or the individual
-files in `commands/`.
+Global slash commands live in `commands/` (one markdown file per command). Invoke with
+`/<name>`. The **Model** column is guidance for this offline-first fleet: reasoning-heavy
+commands produce shallow/unreliable output on small local models (MLX 8B, LM-Studio-on-8GB)
+and should run on the remote box or cloud Claude — see [Model suitability](#model-suitability).
 
-> Hardware-specific helpers (`session-cleanup`, `validate-hw-env`) and Claude-only utilities
-> (`export-prompts`, `pr-tokens`, `commit-manual`, `checkpoint-progress`) were not ported.
-> Add them under `commands/` if needed.
+### Session management
+
+| Command | Purpose | Model |
+| ------- | ------- | ----- |
+| `/lets-go [role with task]` | Initialize a session: plugin health check, git sync, load project docs, surface handoffs | local-OK |
+| `/handoff [topic notes]` | Forward-looking continuation prompt for the next session | local-OK |
+| `/pickup` | Resume from the most recent handoff; archive it so it isn't re-injected | local-OK |
+| `/session-logger [topic]` | Structured session summary with effectiveness assessment; cross-links to previous log | remote/cloud |
+| `/mine-sessions [days:N] [save]` | Analyze session logs for patterns, metrics, process improvements | remote/cloud |
+
+### Git and code quality
+
+| Command | Purpose | Model |
+| ------- | ------- | ----- |
+| `/autocommit [-n] [-t type]` | Stage tracked changes, commit with a generated conventional message | local-OK |
+| `/babysit-pr <PR>` | Monitor a PR for checks, reviews, merge readiness | local-OK |
+| `/build-pdf [report.yaml]` | Build a PDF from markdown sections | local-OK |
+| `/review-pr [PR or branch]` | Review a PR diff: bugs, security, missing tests, style | remote/cloud |
+| `/arch-review` | Principal Architect review framework | remote/cloud |
+| `/doc-review` | Audit documentation for accuracy, DRY, clarity; commit on a docs branch | remote/cloud |
+| `/editorial-review [style]` | Audit prose for AI tells; refine toward a voice/style | remote/cloud |
+| `/security-audit` | Breach-driven security audit for web apps | remote/cloud |
+
+### Model suitability
+
+This fleet runs small local models (MLX Qwen3-8B on the Mac, qwen3-coder-30b in LM Studio on
+the Razer's 8 GB GPU) as the **private/offline coding loop**, with the remote `dev-ai` box and
+cloud Claude for heavier work. Calibrate command use accordingly:
+
+- **local-OK** — mechanical or orchestration commands: short bodies, concrete single-purpose
+  steps, little intermediate reasoning. Reliable on local models.
+- **remote/cloud** — multi-phase protocols that hinge on *quality of reasoning* (synthesis,
+  audit, effectiveness assessment). On an 8–30 B local model these are slow (long thinking
+  traces eat the KV cache budget) and produce confident-but-shallow output. Run them on
+  `dev-ai/gpt-oss:20b` / `qwen3.6:35b-a3b` or cloud Claude. See
+  [`guides/mac-mlx-opencode.md`](guides/mac-mlx-opencode.md) for the context-budget math.
+
+> Not ported from `dot-claude`: hardware helpers (`session-cleanup`, `validate-hw-env`),
+> Claude-only utilities (`export-prompts`, `pr-tokens`, `commit-manual`, `checkpoint-progress`),
+> and `extract-adr` (convert logged decisions into ADRs). Add them under `commands/` if needed.
+
+## Guidelines (annotated index)
+
+On-demand reference standards in `guidelines/` — read the relevant one before the matching
+task (not auto-loaded; `AGENTS.md` carries only the topic list). Copied verbatim from
+`dot-claude`:
+
+| File | Covers |
+| ---- | ------ |
+| `shell-scripts.md` | directory management, error handling, portability |
+| `shell-escaping.md` | shell quoting, TTY handling |
+| `conventional-commits.md` | standardized commit message format |
+| `readme-documentation.md` | README as central documentation hub |
+| `markdown-formatting.md` | spacing and list formatting standards |
+| `session-safety.md` | **CRITICAL** — prevent session hangs / context loss on hardware |
+| `ai-patterns.md` | LLM integration: caching, routing, guardrails, RAG |
+| `project-setup.md` | tiered checklist for bootstrapping new projects |
+| `prose-style.md` | anti-AI-smell rules for narrative writing |
+| `prototype-hygiene.md` | ship clean: config over code, stable docs, PRs over branches |
+| `security-hardening.md` | defense-in-depth patterns grounded in breach analysis |
+| `golang.md` | Go: JSON response safety, gosec patterns, G104 triage |
+| `testing.md` | test pyramid, mocking, CI integration |
+| `ci-local-parity.md` | run exact CI commands locally before pushing |
+| `docx-conversion.md` | python-docx over pandoc; palette, typography |
+| `karpathy-principles.md` | surface assumptions, match existing style, read before you write |
+| `2x2-status-report.md` | quad-chart weekly status format |
+| `C4-diagramming.md` | C4 Model PlantUML organization |
+| `pr-token-tracking.md` | PR token accounting |
 
 ## Keeping in sync with dot-claude
 
