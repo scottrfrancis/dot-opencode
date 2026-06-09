@@ -1,5 +1,6 @@
 ---
 description: Review project documentation for accuracy, DRY, clarity, and new-member accessibility; commit on a docs branch
+model: "dev-ai/gpt-oss:20b"
 ---
 
 Audit and improve this project's documentation, then commit changes on a dedicated branch.

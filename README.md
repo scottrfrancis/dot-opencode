@@ -162,9 +162,19 @@ cloud Claude for heavier work. Calibrate command use accordingly:
   steps, little intermediate reasoning. Reliable on local models.
 - **remote/cloud** — multi-phase protocols that hinge on *quality of reasoning* (synthesis,
   audit, effectiveness assessment). On an 8–30 B local model these are slow (long thinking
-  traces eat the KV cache budget) and produce confident-but-shallow output. Run them on
-  `dev-ai/gpt-oss:20b` / `qwen3.6:35b-a3b` or cloud Claude. See
+  traces eat the KV cache budget) and produce confident-but-shallow output. See
   [`guides/mac-mlx-opencode.md`](guides/mac-mlx-opencode.md) for the context-budget math.
+
+  These commands **pin `model:` in their frontmatter** to the remote box — code reviews
+  (`review-pr`, `security-audit`) to `dev-ai/qwen3-coder:30b`, the rest to
+  `dev-ai/gpt-oss:20b` — so they route to a capable model deterministically instead of
+  silently running on whatever's selected. The pin is harness-enforced (it doesn't rely on a
+  small model choosing correctly).
+
+  > ⚠️ **Offline caveat:** because the pin targets `dev-ai`, these commands **fail when the
+  > remote box is unreachable** (the error names the missing model). Offline, either remove
+  > the `model:` line, override it, or run the task in Claude Code. Mechanical (local-OK)
+  > commands carry no pin and run on whatever model is active.
 
 > Not ported from `dot-claude`: hardware helpers (`session-cleanup`, `validate-hw-env`),
 > Claude-only utilities (`export-prompts`, `pr-tokens`, `commit-manual`, `checkpoint-progress`),

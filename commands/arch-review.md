@@ -1,5 +1,6 @@
 ---
 description: Performs a comprehensive Principal Architect review including quality gates, security, and development practices
+model: "dev-ai/gpt-oss:20b"
 ---
 
 # Principal Architect Review

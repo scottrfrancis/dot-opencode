@@ -1,5 +1,6 @@
 ---
 description: Analyze session logs for patterns, metrics, and process improvements
+model: "dev-ai/gpt-oss:20b"
 ---
 
 # Mine Session Logs

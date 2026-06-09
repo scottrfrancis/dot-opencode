@@ -1,5 +1,6 @@
 ---
 description: Audit prose for AI tells and refine voice/tone. Optional style parameter.
+model: "dev-ai/gpt-oss:20b"
 ---
 
 # Editorial Review
