@@ -27,21 +27,37 @@ already there, then runs `bun install` (or `npm install`) so the safety plugin c
 > The installer never touches your existing live config destructively — real files are moved
 > to `<name>.bak.<timestamp>` before a symlink is placed.
 
-## Models (offline-first)
+## Models (offline-capable, capability-first)
 
 Configured in `opencode.jsonc`:
 
-| Provider id | Where | Default? |
-| ----------- | ----- | -------- |
-| `dev-ai` | RTX 4000 Ada box at `dev-ai.local:11434` (OpenAI-compatible) | **yes** (`dev-ai/gpt-oss:20b`) |
-| `local` | Razer LM Studio at `localhost:1234` | fallback for disconnected use |
+| Provider id | Where | Role |
+| ----------- | ----- | ---- |
+| `dev-ai` | Remote Ollama box at `dev-ai.local:11434` (`192.168.7.235`, OpenAI-compatible) | **default** (`dev-ai/gpt-oss:20b`) — on-network |
+| `mlx` | On-device MLX server at `127.0.0.1:8080` (Apple Silicon only) | private/offline fallback for the M4 Pro Mac |
+| `local` | Razer LM Studio at `localhost:1234` | fallback for the Razer |
 
-Switch models at runtime with `/models`, or set `"model"` in `opencode.jsonc` to
-`"local/qwen3-coder-30b"` when off-network. An Ollama provider stub is included (commented).
+Switch models at runtime with `/models`. On the Mac, start the on-device server with
+`scripts/mlx-serve.sh`, then `/models → MLX (local)` (or set `"model"` to
+`"mlx/default_model"` when fully off-network). A same-machine Ollama provider stub is
+included (commented).
 
-> Note: the default model reference uses the correct `provider/model` form
-> (`dev-ai/gpt-oss:20b`). The earlier hand-written config used `dev-ai.local/...`, which does
-> not match the provider id `dev-ai` — fixed here.
+> The remote box stays the default on purpose — even the biggest model a 24 GB Mac can
+> serve is a different league from the remote box. MLX is the private/offline option, not
+> the everyday default. The provider uses the `dev-ai.local` hostname (DNS resolves it to
+> `192.168.7.235`); fall back to the literal IP only if mDNS is flaky.
+
+### On-device MLX on the Mac
+
+The locked-down **M4 Pro / 24 GB MacBook** can run a fully on-device coding agent via
+`mlx_lm.server` + the `mlx` provider. The launcher [`scripts/mlx-serve.sh`](scripts/mlx-serve.sh)
+is sized for 24 GB (Qwen3-8B-8bit, 3 GiB KV ceiling) and every knob is env-overridable.
+See **[`guides/mac-mlx-opencode.md`](guides/mac-mlx-opencode.md)** for the full setup,
+the 24 GB memory budget, the thinking-mode toggle, and troubleshooting.
+
+```bash
+~/.config/opencode/scripts/mlx-serve.sh    # Apple Silicon only; needs `pip install mlx-lm`
+```
 
 ## Repository layout
 
@@ -57,8 +73,8 @@ dot-opencode/
 ├── plugins/
 │   └── safety.js         # the 4 ~/.claude hooks consolidated into one plugin
 ├── guidelines/           # on-demand reference standards (verbatim from dot-claude)
-├── guides/               # transition docs (opencode-from-claude.md)
-├── scripts/              # account-context.sh (kept for reference; see parity notes)
+├── guides/               # transition + setup docs (opencode-from-claude, mac-mlx-opencode)
+├── scripts/              # account-context.sh, mlx-serve.sh (on-device MLX launcher)
 └── themes/               # custom TUI themes (empty; drop *.json here)
 ```
 
@@ -114,4 +130,5 @@ drift check against both `dot-opencode` and `dot-claude`.
 ## See also
 
 - `guides/opencode-from-claude.md` — transition guide for Claude Code users.
+- `guides/mac-mlx-opencode.md` — on-device MLX + OpenCode setup for the Apple Silicon Mac.
 - [OpenCode docs](https://opencode.ai/docs/) — config, commands, agents, plugins, permissions.
