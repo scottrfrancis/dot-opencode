@@ -1,5 +1,6 @@
 ---
 description: security-audit
+model: "dev-ai/qwen3-coder:30b"
 ---
 # Security Audit
 

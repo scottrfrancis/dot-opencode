@@ -6,24 +6,59 @@
   "$schema": "https://opencode.ai/config.json",
 
   // ----------------------------------------------------------------------------
-  // Models — offline-capable. Default is the remote RTX 4000 Ada box (dev-ai);
-  // the local LM Studio provider is the disconnected fallback. Switch at runtime
-  // with /models  (or set "model" below to "local/qwen3-coder-30b").
+  // Models — offline-capable, capability-first. Default is the remote Ollama box
+  // (dev-ai, dev-ai.local) when on-network; the on-device MLX server (mlx) is the
+  // private/offline fallback for the Apple Silicon Mac; LM Studio (local) is the
+  // Razer fallback. Switch at runtime with /models. When off-network on the Mac,
+  // set "model" to "mlx/default_model" (and run scripts/mlx-serve.sh first).
   // ----------------------------------------------------------------------------
   "model": "dev-ai/gpt-oss:20b",
-  "small_model": "dev-ai/qwen2.5-coder:14b",
+  "small_model": "dev-ai/qwen3:8b",
 
   "provider": {
+    // Remote Ollama box on the LAN. dev-ai.local resolves to 192.168.7.235; the
+    // hostname is used here (DNS works) — swap to http://192.168.7.235:11434/v1
+    // only if mDNS is ever flaky on a locked-down network. /v1 is Ollama's
+    // OpenAI-compatible endpoint. Models below are a curated, tool-capable subset
+    // of what's loaded on the box (`curl dev-ai.local:11434/api/tags`); the box
+    // also serves reasoning (deepseek-r1), vision, and embedding models. Model
+    // ids must match `ollama list` exactly (colon, not hyphen).
+    //
+    // ⚠️ The rig MUST be started with OLLAMA_CONTEXT_LENGTH=32768 (or num_ctx
+    //    32768 in a Modelfile). At Ollama's 4K default, OpenCode's tool
+    //    definitions overflow and the model just chats — tool-calling silently
+    //    breaks. If the locked-down Mac can't reach dev-ai.local directly, tunnel:
+    //    ssh -N -L 11434:dev-ai.local:11434 dev-ai  → baseURL 127.0.0.1:11434/v1.
+    //    See guides/mac-mlx-opencode.md → "Remote Ollama".
     "dev-ai": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "RTX 4000 Ada (remote)",
+      "name": "dev-ai (remote Ollama)",
       "options": { "baseURL": "http://dev-ai.local:11434/v1" },
       "models": {
-        "gpt-oss:20b":       { "name": "GPT-OSS 20B",       "tools": true },
-        "qwen3-coder:30b":   { "name": "Qwen3 Coder 30B",   "tools": true },
-        "qwen2.5-coder:14b": { "name": "Qwen2.5 Coder 14B", "tools": true }
+        "gpt-oss:20b":       { "name": "GPT-OSS 20B",            "tools": true },
+        "qwen3-coder:30b":   { "name": "Qwen3 Coder 30B",        "tools": true },
+        "qwen2.5-coder:32b": { "name": "Qwen2.5 Coder 32B",      "tools": true },
+        "qwen3.6:35b-a3b":   { "name": "Qwen3.6 35B-A3B (MoE)",  "tools": true },
+        "qwen3:30b-a3b":     { "name": "Qwen3 30B-A3B (MoE)",    "tools": true },
+        "qwen3:8b":          { "name": "Qwen3 8B (small/fast)",  "tools": true }
       }
     },
+    // On-device MLX server (Apple Silicon only — the M4 Pro/24GB MacBook). Fully
+    // private and offline. Start it with scripts/mlx-serve.sh, then /models →
+    // "MLX (local)". "default_model" is mlx_lm.server's fixed alias for whatever
+    // --model it was launched with. See guides/mac-mlx-opencode.md.
+    "mlx": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "MLX (local)",
+      "options": { "baseURL": "http://127.0.0.1:8080/v1" },
+      "models": {
+        "default_model": { "name": "Default MLX Model", "tools": true }
+      }
+    },
+    // Razer LM Studio. ⚠️ Set Context Length = 32768 in LM Studio's model load
+    // settings — its 4K-8K default overflows OpenCode's tool defs and silently
+    // breaks tool-calling (model chats, never edits). See README → "Set the
+    // context window ≥ 32K on every local backend".
     "local": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Razer (LM Studio)",
@@ -32,7 +67,7 @@
         "qwen3-coder-30b": { "name": "Qwen3 Coder 30B MoE (local)", "tools": true }
       }
     }
-    // To add Ollama on this machine, uncomment:
+    // To add Ollama running on THIS machine (not the remote box), uncomment:
     // ,"ollama": {
     //   "npm": "@ai-sdk/openai-compatible",
     //   "name": "Ollama (local)",
@@ -74,6 +109,31 @@
       "git push -f *": "deny"
     }
   }
+
+  // ----------------------------------------------------------------------------
+  // Optional: bind OpenCode's built-in plan/build agents to local MLX with
+  // Qwen3's thinking switch, so Tab flips think ↔ no-think on one resident model.
+  // ENABLE ONLY when running local MLX as your primary (see
+  // guides/mac-mlx-opencode.md). Leaving it off keeps plan/build on whatever
+  // model /models selects (remote by default).
+  //
+  // Caveats (both worth a quick test on-box): (1) a custom "prompt" likely
+  // REPLACES the agent's default system prompt — if build's tool-calling
+  // degrades, drop its prompt and type /no_think instead. (2) temperature 0
+  // pins deterministic coding (OpenCode defaults Qwen to 0.55) — keep it.
+  // ----------------------------------------------------------------------------
+  // ,"agent": {
+  //   "build": {
+  //     "model": "mlx/default_model",
+  //     "temperature": 0,
+  //     "prompt": "/no_think\nYou are the build agent. Execute with tools; act, don't deliberate."
+  //   },
+  //   "plan": {
+  //     "model": "mlx/default_model",
+  //     "temperature": 0,
+  //     "prompt": "/think\nYou are the plan agent. Reason through the approach; read-only."
+  //   }
+  // }
 
   // ----------------------------------------------------------------------------
   // MCP servers: none configured in the base. Add under an "mcp" key, e.g.

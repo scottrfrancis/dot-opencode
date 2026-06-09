@@ -1,5 +1,6 @@
 ---
 description: Review a PR diff for bugs, security issues, missing tests, and style
+model: "dev-ai/qwen3-coder:30b"
 ---
 
 Review a pull request for bugs, security issues, missing tests, and code quality.

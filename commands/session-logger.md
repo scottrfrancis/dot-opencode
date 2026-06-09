@@ -1,5 +1,6 @@
 ---
 description: Generate session summaries with effectiveness assessment and cross-linking
+model: "dev-ai/gpt-oss:20b"
 ---
 
 # Session Logger
