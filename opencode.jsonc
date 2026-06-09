@@ -12,7 +12,7 @@
   // Razer fallback. Switch at runtime with /models. When off-network on the Mac,
   // set "model" to "mlx/default_model" (and run scripts/mlx-serve.sh first).
   // ----------------------------------------------------------------------------
-  "model": "dev-ai/gpt-oss:20b",
+  "model": "dev-ai/qwen3.5:27b",
   "small_model": "dev-ai/qwen3:8b",
 
   "provider": {
@@ -38,6 +38,7 @@
         "gpt-oss:20b":       { "name": "GPT-OSS 20B",            "tools": true },
         "qwen3-coder:30b":   { "name": "Qwen3 Coder 30B",        "tools": true },
         "qwen2.5-coder:32b": { "name": "Qwen2.5 Coder 32B",      "tools": true },
+        "qwen3.5:27b":       { "name": "Qwen3.5 27B (default)",  "tools": true },
         "qwen3.6:35b-a3b":   { "name": "Qwen3.6 35B-A3B (MoE)",  "tools": true },
         "qwen3:30b-a3b":     { "name": "Qwen3 30B-A3B (MoE)",    "tools": true },
         "qwen3:8b":          { "name": "Qwen3 8B (small/fast)",  "tools": true }
