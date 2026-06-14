@@ -33,15 +33,19 @@ Configured in `opencode.jsonc`:
 
 | Provider id | Where | Default? |
 | ----------- | ----- | -------- |
-| `dev-ai` | RTX 4000 Ada box at `dev-ai.local:11434` (OpenAI-compatible) | **yes** (`dev-ai/gpt-oss:20b`) |
+| `dev-ai` | RTX 4500 Blackwell (32GB) box at `dev-ai.local:11434` (OpenAI-compatible) | **yes** (`dev-ai/qwen3.6:35b-a3b`) |
 | `local` | Razer LM Studio at `localhost:1234` | fallback for disconnected use |
 
-Switch models at runtime with `/models`, or set `"model"` in `opencode.jsonc` to
-`"local/qwen3-coder-30b"` when off-network. An Ollama provider stub is included (commented).
+The working pair is **`qwen3.6-35b-a3b`** (deep, the remote default — fits fully in the 32GB VRAM so
+it's fast there) and **`qwen3-coder-30b`** (fast, for quick edits). Switch at runtime with `/models`,
+or set `"model"` in `opencode.jsonc` to `"local/qwen/qwen3-coder-30b"` for fully offline. An Ollama
+provider stub is included (commented).
 
-> Note: the default model reference uses the correct `provider/model` form
-> (`dev-ai/gpt-oss:20b`). The earlier hand-written config used `dev-ai.local/...`, which does
-> not match the provider id `dev-ai` — fixed here.
+> Note: model ids must match exactly what each server's `/v1/models` reports — LM Studio
+> namespaces with a publisher prefix (`qwen/qwen3-coder-30b`); the remote Ollama box uses tag
+> form (`qwen3-coder:30b-a3b-q4_K_M`). On the local 8GB-VRAM box, load **one model at a time**
+> (LM Studio → Max loaded models = 1); the 35B reasons heavily (~60-140s/answer) so it's the
+> deep-dive option, not the interactive default. `dev-ai/gemma4:12b` is the small/fast model.
 
 ## Repository layout
 
