@@ -6,33 +6,27 @@
   "$schema": "https://opencode.ai/config.json",
 
   // ----------------------------------------------------------------------------
-  // Models — the working pair is qwen3.6-35b-a3b (deep, default) + qwen3-coder-30b
-  // (fast). Default provider is the remote RTX 4500 Blackwell box (32GB, dev-ai), where the
-  // 35B fits fully in VRAM and runs fast. The local LM Studio provider is the disconnected
-  // fallback (same two models, but there the 30B coder is the practical default — the 35B
-  // reasons too slowly under 8GB offload). Switch at runtime with /models (or set "model"
-  // below to "local/qwen/qwen3-coder-30b" for fully offline).
+  // Models — THREE TIERS (everything else redacted; the box is moving to a single-model
+  // server, so the old multi-model lists were just experimentation cruft):
+  //   1. small / local  — LM Studio on THIS machine (offline + cheap ops / small_model)
+  //   2. remote         — the single model on dev-ai (the RTX 4500 Blackwell box)
+  //   3. cloud          — Claude (anthropic) for hard problems; needs ANTHROPIC_API_KEY
+  // Default working model is the remote dev-ai model; small_model is the tiny local gemma.
+  // Switch at runtime with /models. For fully offline, set "model" to "local/qwen/qwen3-coder-30b".
   // ----------------------------------------------------------------------------
   "model": "dev-ai/qwen3.6:35b-a3b",
-  "small_model": "dev-ai/gemma4:12b",
+  "small_model": "local/google/gemma-3-4b",
 
   "provider": {
     "dev-ai": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "RTX 4500 Blackwell 32GB (remote)",
+      // Single-model server. baseURL stays :11434/v1 (Ollama) until vLLM is live on the box,
+      // then flip to "http://dev-ai.local:8000/v1" (see HANDOFF-vllm-migration.md, Phase 4).
       "options": { "baseURL": "http://dev-ai.local:11434/v1" },
-      // Curated set (verified live Jun 2026). The two coders are the working pair;
-      // nemotron for agentic/tool-use, gemma4:12b as the fast multimodal small_model.
       "models": {
-        // Fast coder. MoE 3B-active, non-thinking instruct. Snappy — pick this for quick edits.
-        "qwen3-coder:30b-a3b-q4_K_M":     { "name": "Qwen3 Coder 30B-A3B (fast)",    "tools": true },
-        // DEFAULT (remote). Deep coder (SWE-bench 73.4). On 32GB VRAM the Q4 (~22GB) is fully
-        // GPU-resident, so its heavy reasoning runs FAST here (unlike the local 8GB box).
-        "qwen3.6:35b-a3b":                { "name": "Qwen3.6 35B-A3B (default)",     "tools": true },
-        // Long-context agent / tool-use (1M ctx, Mamba-hybrid MoE).
-        "nemotron-3-nano:30b-a3b-q4_K_M": { "name": "Nemotron 3 Nano 30B-A3B",       "tools": true },
-        // Multimodal + function-calling; small_model default.
-        "gemma4:12b":                     { "name": "Gemma 4 12B (multimodal)",      "tools": true }
+        // The one served model. Deep coder (SWE-bench 73.4), GPU-resident on the 32GB box.
+        "qwen3.6:35b-a3b":                { "name": "Qwen3.6 35B-A3B (remote)",     "tools": true }
       }
     },
     "local": {
@@ -40,26 +34,22 @@
       "name": "Razer (LM Studio)",
       "options": { "baseURL": "http://localhost:1234/v1" },
       "models": {
-        // DEFAULT offline coder. MoE 3B-active, non-thinking instruct. Eval (Jun 2026,
-        // isolated): 4/4 coding tasks, ~17 tok/s, ~8s per answer. Best disconnected coder.
+        // Working local coder (offline default). MoE 3B-active, non-thinking instruct.
+        // Eval (Jun 2026, isolated): 4/4 coding tasks, ~17 tok/s. Best disconnected coder.
         "qwen/qwen3-coder-30b": { "name": "Qwen3 Coder 30B-A3B (local, default)", "tools": true },
-        // "Think harder" model. MoE 3B-active, SWE-bench 73.4 — out-qualities the coder on
-        // HARD problems, but reasons heavily: 4/4 in eval yet ~60-140s PER answer. Use for
-        // tough algorithms/architecture, not interactive edits. Prefix prompts with /no_think.
-        "qwen3.6-35b-a3b":      { "name": "Qwen3.6 35B-A3B (local, slow/deep)", "tools": true },
-        // Small dense, fits fully in 8GB VRAM — fast (~27 tok/s) but a reasoning model that
-        // rambles; needs /no_think + prompt coaxing to emit clean code. Not a drop-in coder.
-        "qwen3.5-9b": {
-          "name": "Qwen3.5-9B (local)",
-          "limit": { "context": 16384, "output": 4096 },
-          "tools": true
-        },
-        // Tiny, fully GPU-resident, ~43 tok/s. Passes easy tasks — fast scratchpad for
-        // boilerplate only; not for real repo-scale work. Also multimodal.
-        "google/gemma-3-4b":    { "name": "Gemma 3 4B (local, fast/boilerplate)", "tools": true }
-        // REMOVED from list: qwen/qwen3.6-27b (dense 16GB). Eval verdict: UNUSABLE on this
-        // 8GB-VRAM box — timed out (>200s) on a single task even loaded alone, and crashed
-        // the LM Studio server when co-resident. Rule: no dense model >9B here. Still on disk.
+        // Tiny, fully GPU-resident, ~43 tok/s — the small_model tier (titles/summaries/boilerplate).
+        // Also multimodal. Not for real repo-scale work.
+        "google/gemma-3-4b":    { "name": "Gemma 3 4B (local, fast/small)", "tools": true }
+      }
+    },
+
+    // Cloud tier — Claude for hard problems. Needs ANTHROPIC_API_KEY in the env
+    // (or run `opencode auth login`). anthropic is a built-in OpenCode provider; no npm/baseURL.
+    "anthropic": {
+      "name": "Claude (cloud)",
+      "models": {
+        "claude-opus-4-8":   { "name": "Claude Opus 4.8 (cloud, deep)" },
+        "claude-sonnet-4-6": { "name": "Claude Sonnet 4.6 (cloud, fast)" }
       }
     }
     // To add Ollama on this machine, uncomment:
