@@ -1,0 +1,30 @@
+{
+  // ---------------------------------------------------------------------------
+  // PER-MACHINE override template. Copy to opencode.local.jsonc (gitignored) and
+  // point OPENCODE_CONFIG at it so OpenCode deep-merges it OVER the shared
+  // opencode.jsonc. This is how each machine keeps its own default model WITHOUT
+  // editing the tracked file (editing the tracked file per machine = pull conflicts).
+  //
+  //   cp opencode.local.example.jsonc ~/.config/opencode/opencode.local.jsonc
+  //
+  //   # then set once, per machine, in your shell profile:
+  //   bash/zsh : export OPENCODE_CONFIG="$HOME/.config/opencode/opencode.local.jsonc"
+  //   pwsh     : setx OPENCODE_CONFIG "$HOME\.config\opencode\opencode.local.jsonc"
+  //
+  // Only put keys that DIFFER from the shared config here (deep-merged by key).
+  // Almost always just the two below; providers all live in the shared file.
+  // ---------------------------------------------------------------------------
+  "$schema": "https://opencode.ai/config.json",
+
+  // --- Windows / Razer (LM Studio is the local tier) ---
+  "model": "dev-ai/qwen3.6:35b-a3b",
+  "small_model": "local/google/gemma-3-4b"
+
+  // --- Apple-Silicon Mac (MLX is the local tier) — use instead of the above ---
+  // "model": "dev-ai/qwen3.6:35b-a3b",     // or "mlx/default_model" when off-network
+  // "small_model": "mlx/default_model"     // run scripts/mlx-serve.sh first
+
+  // --- Cloud-first (when you want Claude as the default) ---
+  // "model": "anthropic/claude-opus-4-8",
+  // "small_model": "anthropic/claude-sonnet-4-6"
+}
