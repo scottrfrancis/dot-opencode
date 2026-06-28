@@ -14,6 +14,14 @@ import os
 import re
 import sys
 
+# Force UTF-8 output so the ✓/✗ glyphs don't crash on a legacy Windows console
+# (cp1252), which would otherwise make update.ps1 fail mid-run. No-op elsewhere.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):  # pre-3.7, or a non-reconfigurable stream
+        pass
+
 
 def strip_jsonc(src):
     """Remove // and /* */ comments while preserving line numbers and string
