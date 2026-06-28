@@ -56,19 +56,36 @@ there, `update.sh` re-copies on each pull.
 
 ### What's shared vs. per-machine
 
-**Everything tracked here is shared and machine-agnostic** — both machines run the same
-`opencode.jsonc`, commands, and guidelines. The providers differ only in *what's reachable*:
+**Everything tracked here is shared and machine-agnostic** — every machine runs the same
+`opencode.jsonc`, commands, and guidelines. The model setup is **three tiers**; providers differ
+only in *what's reachable* on each box:
 
-| Provider | MacBook (M4 Pro) | Razer 14 | Shared |
-| -------- | ---------------- | -------- | ------ |
-| `dev-ai` (remote Ollama) | ✓ | ✓ | **default, both** |
-| `mlx` (on-device) | ✓ Apple-Silicon only | — | — |
-| `local` (LM Studio) | — | ✓ | — |
+| Tier | Provider | MacBook (M4 Pro) | Razer 14 / Windows | Shared def? |
+| ---- | -------- | ---------------- | ------------------ | ----------- |
+| local | `mlx` (on-device, Apple-Silicon) | ✓ | — | — |
+| local | `local` (LM Studio) | — | ✓ | — |
+| remote | `dev-ai` (single model) | ✓ | ✓ | **shared default** |
+| cloud | `anthropic` (Claude) | ✓ (key) | ✓ (key) | — |
 
-A provider that isn't serving on a given machine is simply unused (it only errors if you
-select it). **Don't edit `opencode.jsonc` per machine** — that causes pull conflicts. To run
-on a local model when off-network, switch at runtime with `/models`; OpenCode remembers the
-choice per project in its (gitignored) state dir, so it never touches the tracked config.
+A provider that isn't serving on a given machine is simply unused (it only errors if you select
+it). **Never edit `opencode.jsonc` per machine** — that causes pull conflicts (and once did).
+
+**To give a machine its own persistent default**, use a per-machine override instead of editing
+the tracked file. OpenCode deep-merges configs by precedence, and `OPENCODE_CONFIG` is loaded
+*over* the global config:
+
+```bash
+cp opencode.local.example.jsonc ~/.config/opencode/opencode.local.jsonc   # gitignored
+# edit it: just "model" / "small_model" for THIS machine
+
+# set once, per machine, in your shell profile:
+export OPENCODE_CONFIG="$HOME/.config/opencode/opencode.local.jsonc"       # bash/zsh
+# setx OPENCODE_CONFIG "$HOME\.config\opencode\opencode.local.jsonc"       # pwsh
+```
+
+Only override the keys that differ (almost always just `model`/`small_model`); all providers stay
+in the shared file. No override? You get the shared remote default and can still `/models`-switch
+at runtime (OpenCode remembers that per project in its gitignored state dir).
 
 ## Models (offline-capable, capability-first)
 
@@ -76,9 +93,10 @@ Configured in `opencode.jsonc`:
 
 | Provider id | Where | Role |
 | ----------- | ----- | ---- |
-| `dev-ai` | Remote Ollama box at `dev-ai.local:11434` (`192.168.7.235`, OpenAI-compatible) | **default** (`dev-ai/gpt-oss:20b`) — on-network |
-| `mlx` | On-device MLX server at `127.0.0.1:8080` (Apple Silicon only) | private/offline fallback for the M4 Pro Mac |
-| `local` | Razer LM Studio at `localhost:1234` | fallback for the Razer |
+| `dev-ai` | Remote inference box at `dev-ai.local:11434` (`192.168.7.235`) — single model; → `:8000` after the vLLM migration | **shared default** (`dev-ai/qwen3.6:35b-a3b`) — on-network |
+| `mlx` | On-device MLX server at `127.0.0.1:8080` (Apple Silicon only) | local tier for the M4 Pro Mac |
+| `local` | Razer LM Studio at `localhost:1234` | local tier for the Razer/Windows |
+| `anthropic` | Claude (cloud) — needs `ANTHROPIC_API_KEY` or `opencode auth login` | cloud tier for hard problems |
 
 Switch models at runtime with `/models`. On the Mac, start the on-device server with
 `scripts/mlx-serve.sh`, then `/models → MLX (local)` (or set `"model"` to

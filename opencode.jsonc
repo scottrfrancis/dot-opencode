@@ -6,42 +6,42 @@
   "$schema": "https://opencode.ai/config.json",
 
   // ----------------------------------------------------------------------------
-  // Models — offline-capable, capability-first. Default is the remote Ollama box
-  // (dev-ai, dev-ai.local) when on-network; the on-device MLX server (mlx) is the
-  // private/offline fallback for the Apple Silicon Mac; LM Studio (local) is the
-  // Razer fallback. Switch at runtime with /models. When off-network on the Mac,
-  // set "model" to "mlx/default_model" (and run scripts/mlx-serve.sh first).
+  // Models — THREE TIERS, all machine-agnostic (every provider lives here; a
+  // provider a given machine can't reach is simply unused):
+  //   1. local  — on THIS machine: mlx (Apple-Silicon Mac) OR local LM Studio (Razer/Win)
+  //   2. remote — dev-ai, the single-model inference box (one served model)
+  //   3. cloud  — Claude (anthropic) for hard problems; needs ANTHROPIC_API_KEY
+  //
+  // PER-MACHINE DEFAULTS DO NOT GO HERE. The "model"/"small_model" below are a safe
+  // shared default (the remote box). To give a machine its OWN persistent default
+  // WITHOUT editing this tracked file (that's what caused pull conflicts), put it in
+  // a gitignored ~/.config/opencode/opencode.local.jsonc and point OPENCODE_CONFIG
+  // at it — OpenCode deep-merges it over this file. See opencode.local.example.jsonc
+  // and README → "What's shared vs. per-machine". Or just /models-switch at runtime.
   // ----------------------------------------------------------------------------
-  "model": "dev-ai/qwen3.5:27b",
-  "small_model": "dev-ai/qwen3:8b",
+  "model": "dev-ai/qwen3.6:35b-a3b",
+  "small_model": "dev-ai/qwen3.6:35b-a3b",
 
   "provider": {
-    // Remote Ollama box on the LAN. dev-ai.local resolves to 192.168.7.235; the
-    // hostname is used here (DNS works) — swap to http://192.168.7.235:11434/v1
-    // only if mDNS is ever flaky on a locked-down network. /v1 is Ollama's
-    // OpenAI-compatible endpoint. Models below are a curated, tool-capable subset
-    // of what's loaded on the box (`curl dev-ai.local:11434/api/tags`); the box
-    // also serves reasoning (deepseek-r1), vision, and embedding models. Model
-    // ids must match `ollama list` exactly (colon, not hyphen).
+    // Remote inference box (dev-ai) on the LAN — the REMOTE tier. dev-ai.local
+    // resolves to 192.168.7.235. Now a SINGLE-MODEL SERVER (the prior multi-model
+    // list was experimentation cruft). Migrating Ollama → vLLM for performance:
+    // baseURL stays :11434/v1 (Ollama) until vLLM is live, then flip to
+    // http://dev-ai.local:8000/v1 (see HANDOFF-vllm-migration.md, Phase 4).
     //
-    // ⚠️ The rig MUST be started with OLLAMA_CONTEXT_LENGTH=32768 (or num_ctx
-    //    32768 in a Modelfile). At Ollama's 4K default, OpenCode's tool
+    // ⚠️ While on Ollama, the rig MUST be started with OLLAMA_CONTEXT_LENGTH=32768
+    //    (or num_ctx 32768 in a Modelfile). At Ollama's 4K default, OpenCode's tool
     //    definitions overflow and the model just chats — tool-calling silently
     //    breaks. If the locked-down Mac can't reach dev-ai.local directly, tunnel:
     //    ssh -N -L 11434:dev-ai.local:11434 dev-ai  → baseURL 127.0.0.1:11434/v1.
     //    See guides/mac-mlx-opencode.md → "Remote Ollama".
     "dev-ai": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "dev-ai (remote Ollama)",
+      "name": "dev-ai (remote, single model)",
       "options": { "baseURL": "http://dev-ai.local:11434/v1" },
       "models": {
-        "gpt-oss:20b":       { "name": "GPT-OSS 20B",            "tools": true },
-        "qwen3-coder:30b":   { "name": "Qwen3 Coder 30B",        "tools": true },
-        "qwen2.5-coder:32b": { "name": "Qwen2.5 Coder 32B",      "tools": true },
-        "qwen3.5:27b":       { "name": "Qwen3.5 27B (default)",  "tools": true },
-        "qwen3.6:35b-a3b":   { "name": "Qwen3.6 35B-A3B (MoE)",  "tools": true },
-        "qwen3:30b-a3b":     { "name": "Qwen3 30B-A3B (MoE)",    "tools": true },
-        "qwen3:8b":          { "name": "Qwen3 8B (small/fast)",  "tools": true }
+        // The one served model. ids must match the server exactly (colon, not hyphen).
+        "qwen3.6:35b-a3b":   { "name": "Qwen3.6 35B-A3B (remote)",  "tools": true }
       }
     },
     // On-device MLX server (Apple Silicon only — the M4 Pro/24GB MacBook). Fully
@@ -65,7 +65,19 @@
       "name": "Razer (LM Studio)",
       "options": { "baseURL": "http://localhost:1234/v1" },
       "models": {
-        "qwen3-coder-30b": { "name": "Qwen3 Coder 30B MoE (local)", "tools": true }
+        "qwen/qwen3-coder-30b": { "name": "Qwen3 Coder 30B MoE (local)", "tools": true },
+        // Tiny, fast — good small_model for the Razer (titles/summaries/boilerplate).
+        "google/gemma-3-4b":    { "name": "Gemma 3 4B (local, fast/small)", "tools": true }
+      }
+    },
+
+    // Cloud tier — Claude for hard problems. Needs ANTHROPIC_API_KEY in the env
+    // (or `opencode auth login` → Anthropic). anthropic is built in; no npm/baseURL.
+    "anthropic": {
+      "name": "Claude (cloud)",
+      "models": {
+        "claude-opus-4-8":   { "name": "Claude Opus 4.8 (cloud, deep)" },
+        "claude-sonnet-4-6": { "name": "Claude Sonnet 4.6 (cloud, fast)" }
       }
     }
     // To add Ollama running on THIS machine (not the remote box), uncomment:

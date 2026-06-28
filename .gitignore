@@ -15,6 +15,10 @@ sessions/
 session-logs/
 tui/
 
+# Per-machine config override (deep-merged via OPENCODE_CONFIG). The .example is tracked.
+opencode.local.jsonc
+opencode.local.json
+
 # Local-only secrets / credentials
 *.pem
 *.key
