@@ -17,11 +17,11 @@
   "$schema": "https://opencode.ai/config.json",
 
   // --- Windows / Razer (LM Studio is the local tier) ---
-  "model": "dev-ai/qwen3.6:35b-a3b",
+  "model": "dev-ai/workhorse:latest",
   "small_model": "local/google/gemma-3-4b"
 
   // --- Apple-Silicon Mac (MLX is the local tier) — use instead of the above ---
-  // "model": "dev-ai/qwen3.6:35b-a3b",     // or "mlx/default_model" when off-network
+  // "model": "dev-ai/workhorse:latest",     // or "mlx/default_model" when off-network
   // "small_model": "mlx/default_model"     // run scripts/mlx-serve.sh first
 
   // --- Cloud-first (when you want Claude as the default) ---
