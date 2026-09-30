@@ -22,7 +22,10 @@ cd ~/workspace/dot-opencode
 
 The installer symlinks each config item into `~/.config/opencode/`, backing up anything real
 already there, then runs `bun install` (or `npm install`) so the safety plugin can resolve
-`@opencode-ai/plugin`. Restart OpenCode afterward.
+`@opencode-ai/plugin`. Restart OpenCode afterward. One exception: `package.json` is copied, never
+linked, because OpenCode rewrites it on start to pin its own plugin SDK version, and through a
+symlink that rewrite lands in the checkout as an uncommitted change. Bump the pin in the repo
+deliberately when every machine has upgraded (`tests/` checks the copy).
 
 > The installer never touches your existing live config destructively — real files are moved
 > to `<name>.bak.<timestamp>` before a symlink is placed.

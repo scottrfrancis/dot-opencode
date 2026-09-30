@@ -6,6 +6,8 @@
 #
 # Symlinks on Windows need Developer Mode (Settings > For developers) or an
 # elevated shell. If neither is available, pass -Copy to copy instead.
+# package.json is always COPIED: OpenCode rewrites it on start to pin its own
+# plugin SDK version, and through a symlink that rewrite dirties the checkout.
 #
 # Usage:
 #   ./install.ps1            # symlink (preferred)
@@ -17,6 +19,7 @@ $ErrorActionPreference = "Stop"
 $Repo   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Target = if ($env:OPENCODE_CONFIG_DIR) { $env:OPENCODE_CONFIG_DIR } else { Join-Path $HOME ".config/opencode" }
 $Items  = @("opencode.jsonc","tui.json","AGENTS.md","package.json","commands","agents","plugins","guidelines","guides","scripts","themes")
+$CopyAlways = @("package.json")
 $Stamp  = Get-Date -Format "yyyyMMdd-HHmmss"
 $Mode   = if ($Copy) { "copy" } else { "link" }
 
@@ -38,7 +41,7 @@ foreach ($item in $Items) {
     }
   }
 
-  if ($Copy) {
+  if ($Copy -or ($CopyAlways -contains $item)) {
     Copy-Item $src $dst -Recurse
     Write-Host "  copied  $item"
   } else {
