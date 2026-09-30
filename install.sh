@@ -4,6 +4,8 @@
 # Symlinks each config item into the OpenCode global config dir, leaving the dir
 # itself real so OpenCode can still write runtime state (auth.json, cache/, etc.).
 # Anything real already in place is backed up to <name>.bak.<timestamp> first.
+# package.json is always COPIED: OpenCode rewrites it on start to pin its own
+# plugin SDK version, and through a symlink that rewrite dirties the checkout.
 #
 # Usage:
 #   ./install.sh            # symlink (preferred)
@@ -17,6 +19,7 @@ MODE="link"
 [ "${1:-}" = "--copy" ] && MODE="copy"
 
 ITEMS=(opencode.jsonc tui.json AGENTS.md package.json commands agents plugins guidelines guides scripts themes)
+COPY_ALWAYS=(package.json)
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
 mkdir -p "$TARGET"
@@ -35,7 +38,7 @@ for item in "${ITEMS[@]}"; do
     rm -f "$dst"
   fi
 
-  if [ "$MODE" = "copy" ]; then
+  if [ "$MODE" = "copy" ] || [[ " ${COPY_ALWAYS[*]} " == *" $item "* ]]; then
     cp -R "$src" "$dst"
     echo "  copied  $item"
   else
