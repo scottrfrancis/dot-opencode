@@ -93,7 +93,7 @@ Configured in `opencode.jsonc`:
 
 | Provider id | Where | Role |
 | ----------- | ----- | ---- |
-| `dev-ai` | Remote inference box at `dev-ai.local:11434` (`192.168.7.235`) — single model; → `:8000` after the vLLM migration | **shared default** (`dev-ai/qwen3.6:35b-a3b`) — on-network |
+| `dev-ai` | Remote inference box at `dev-ai.local:11434` (`192.168.7.235`) — single model; → `:8000` after the vLLM migration | **shared default** (`dev-ai/workhorse:latest`, the alias for dev-ai's current primary model) — on-network |
 | `mlx` | On-device MLX server at `127.0.0.1:8080` (Apple Silicon only) | local tier for the M4 Pro Mac |
 | `local` | Razer LM Studio at `localhost:1234` | local tier for the Razer/Windows |
 | `anthropic` | Claude (cloud) — needs `ANTHROPIC_API_KEY` or `opencode auth login` | cloud tier for hard problems |

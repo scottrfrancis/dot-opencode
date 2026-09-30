@@ -19,8 +19,8 @@
   // at it — OpenCode deep-merges it over this file. See opencode.local.example.jsonc
   // and README → "What's shared vs. per-machine". Or just /models-switch at runtime.
   // ----------------------------------------------------------------------------
-  "model": "dev-ai/qwen3.6:35b-a3b",
-  "small_model": "dev-ai/qwen3.6:35b-a3b",
+  "model": "dev-ai/workhorse:latest",
+  "small_model": "dev-ai/workhorse:latest",
 
   "provider": {
     // Remote inference box (dev-ai) on the LAN — the REMOTE tier. dev-ai.local
@@ -40,8 +40,11 @@
       "name": "dev-ai (remote, single model)",
       "options": { "baseURL": "http://dev-ai.local:11434/v1" },
       "models": {
-        // The one served model. ids must match the server exactly (colon, not hyphen).
-        "qwen3.6:35b-a3b":   { "name": "Qwen3.6 35B-A3B (remote)",  "tools": true }
+        // Clients name the workhorse:latest ALIAS, never a concrete model: dev-ai
+        // re-points the alias when the primary model changes (okf-knowledge
+        // infra/model-upgrade-playbook.md), so no client edit is needed. Currently
+        // -> qwen3.8:27b-tools, num_ctx 131072. ids match the server exactly (colon).
+        "workhorse:latest":  { "name": "Workhorse (remote, dev-ai primary)", "tools": true }
       }
     },
     // On-device MLX server (Apple Silicon only — the M4 Pro/24GB MacBook). Fully

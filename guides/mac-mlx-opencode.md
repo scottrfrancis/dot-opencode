@@ -346,7 +346,7 @@ pane; if it drops, requests fail like a dead server would — bring it back up.
 > the rig (or `num_ctx 32768` in a Modelfile) so tool-calling works. Two more:
 > always use the **`/v1`** (OpenAI-compatible) path, never `/api`; and match the
 > model id in `opencode.jsonc` to the **exact tag** from `ollama list` — Ollama
-> tags use a colon (`qwen3.6:35b-a3b`), not a hyphen.
+> tags use a colon (`workhorse:latest`), not a hyphen.
 
 ---
 
@@ -363,7 +363,7 @@ pane; if it drops, requests fail like a dead server would — bring it back up.
 | `mlx_lm.server: command not found` | `mlx-lm` not installed / not on PATH | `pip install mlx-lm`; check the active Python env |
 | Default model unreachable on the Mac | Remote box (`dev-ai` / dev-ai.local) off-network or down | Start MLX and `/models → MLX (local)`, or set `model` to `mlx/default_model` |
 | `dev-ai` agent just chats, never edits | Ollama `num_ctx` at 4K default — OpenCode's tool defs overflow | Set `OLLAMA_CONTEXT_LENGTH=32768` on the rig (or `num_ctx 32768` in a Modelfile) |
-| `dev-ai` 404s / model not found | Wrong path or mismatched tag | Use the `/v1` path (not `/api`); match the exact `ollama list` tag (colon, e.g. `qwen3.6:35b-a3b`) |
+| `dev-ai` 404s / model not found | Wrong path or mismatched tag | Use the `/v1` path (not `/api`); match the exact `ollama list` tag (colon, e.g. `workhorse:latest`) |
 | Can't reach `dev-ai.local` from the locked-down Mac | No LAN route to the rig | Tunnel: `ssh -N -L 11434:dev-ai.local:11434 dev-ai`, then point the provider at `127.0.0.1:11434/v1` |
 
 ---
