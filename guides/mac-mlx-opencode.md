@@ -53,7 +53,7 @@ flowchart LR
     GPU["Metal GPU<br/>unified memory"]
     SRV --> MDL --> GPU
   end
-  REM["dev-ai · remote Ollama<br/>dev-ai.local:11434"]
+  REM["dev-ai · remote vLLM<br/>dev-ai.local:8000"]
   OC -->|"/models → MLX (local)"| SRV
   OC -.->|"default: on-network"| REM
 ```
@@ -313,40 +313,39 @@ naming defect as Step 1.
 
 ---
 
-## Remote Ollama (`dev-ai`) — the default, and its gotchas
+## Remote vLLM (`dev-ai`): the default, and its gotchas
 
-The capability-first default is the remote Ollama box `dev-ai` (`dev-ai.local`,
+The capability-first default is the remote vLLM box `dev-ai` (`dev-ai.local`,
 `192.168.7.235`). The `dev-ai` provider in `opencode.jsonc` already points at it.
 Two access patterns, depending on whether the Mac can see the box directly:
 
 **Direct on the LAN (current config).** When the Mac and the rig share a network,
-the provider hits `http://dev-ai.local:11434/v1` directly. Verify:
+the provider hits `http://dev-ai.local:8000/v1` directly. Verify:
 
 ```bash
-curl -s http://dev-ai.local:11434/v1/models | jq -r '.data[].id'   # lists the rig's models
+curl -s http://dev-ai.local:8000/v1/models | jq -r '.data[].id'    # lists the served name: workhorse
 ```
 
 **SSH tunnel (locked-down / off-LAN / privacy).** When the enterprise MacBook
 *can't* route to the rig directly, or you don't want Ollama exposed on the LAN at
-all, forward the port over SSH instead — the rig's Ollama can stay bound to
+all, forward the port over SSH instead — the rig's server can stay bound to
 `127.0.0.1`, nothing published:
 
 ```bash
-# forward local 11434 → the rig's 11434; -N = tunnel only, no remote shell
-ssh -N -L 11434:dev-ai.local:11434 dev-ai
+# forward local 8000 → the rig's 8000; -N = tunnel only, no remote shell
+ssh -N -L 8000:dev-ai.local:8000 dev-ai
 ```
 
 With the tunnel up, point the `dev-ai` provider's `baseURL` at
-`http://127.0.0.1:11434/v1` instead. Leave the `ssh -N -L` running in its own
+`http://127.0.0.1:8000/v1` instead. Leave the `ssh -N -L` running in its own
 pane; if it drops, requests fail like a dead server would — bring it back up.
 
-> ⚠️ **The gotcha that silently breaks agent mode.** Ollama defaults `num_ctx` to
-> **4 K**, and OpenCode's tool definitions alone overflow that — so the model just
-> *chats and never edits*, with no error. Set **`OLLAMA_CONTEXT_LENGTH=32768`** on
-> the rig (or `num_ctx 32768` in a Modelfile) so tool-calling works. Two more:
-> always use the **`/v1`** (OpenAI-compatible) path, never `/api`; and match the
-> model id in `opencode.jsonc` to the **exact tag** from `ollama list` — Ollama
-> tags use a colon (`workhorse:latest`), not a hyphen.
+> ⚠️ **The gotcha that silently slows everything.** dev-ai's Ollama on `:11434` is
+> CPU-only since the 2026-10-20 vLLM cutover, but it still answers for
+> `workhorse:latest`. A provider left on `:11434` works with no error, on CPU, at a
+> 32K window. If the agent is slow, check the `baseURL` port first. Also: always use
+> the **`/v1`** (OpenAI-compatible) path, and match the model id in
+> `opencode.jsonc` to the served name from `/v1/models` (`workhorse`, no `:latest`).
 
 ---
 
@@ -362,9 +361,9 @@ pane; if it drops, requests fail like a dead server would — bring it back up.
 | Server dies mid-task after running a while | Prompt cache grew past the Metal limit | The launcher's `--prompt-cache-bytes`/`--prompt-cache-size` cap it; right-size the model |
 | `mlx_lm.server: command not found` | `mlx-lm` not installed / not on PATH | `pip install mlx-lm`; check the active Python env |
 | Default model unreachable on the Mac | Remote box (`dev-ai` / dev-ai.local) off-network or down | Start MLX and `/models → MLX (local)`, or set `model` to `mlx/default_model` |
-| `dev-ai` agent just chats, never edits | Ollama `num_ctx` at 4K default — OpenCode's tool defs overflow | Set `OLLAMA_CONTEXT_LENGTH=32768` on the rig (or `num_ctx 32768` in a Modelfile) |
-| `dev-ai` 404s / model not found | Wrong path or mismatched tag | Use the `/v1` path (not `/api`); match the exact `ollama list` tag (colon, e.g. `workhorse:latest`) |
-| Can't reach `dev-ai.local` from the locked-down Mac | No LAN route to the rig | Tunnel: `ssh -N -L 11434:dev-ai.local:11434 dev-ai`, then point the provider at `127.0.0.1:11434/v1` |
+| `dev-ai` agent is slow, dev-ai's CPU pegged | Provider still on Ollama `:11434`, which is CPU-only since 2026-10-20 | Point `baseURL` at `http://dev-ai.local:8000/v1` and the model at `workhorse` |
+| `dev-ai` 404s / model not found | Wrong path or mismatched id | Use the `/v1` path; match the served name from `/v1/models` (`workhorse`) |
+| Can't reach `dev-ai.local` from the locked-down Mac | No LAN route to the rig | Tunnel: `ssh -N -L 8000:dev-ai.local:8000 dev-ai`, then point the provider at `127.0.0.1:8000/v1` |
 
 ---
 
