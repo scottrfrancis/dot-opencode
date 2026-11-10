@@ -19,32 +19,29 @@
   // at it — OpenCode deep-merges it over this file. See opencode.local.example.jsonc
   // and README → "What's shared vs. per-machine". Or just /models-switch at runtime.
   // ----------------------------------------------------------------------------
-  "model": "dev-ai/workhorse:latest",
-  "small_model": "dev-ai/workhorse:latest",
+  "model": "dev-ai/workhorse",
+  "small_model": "dev-ai/workhorse",
 
   "provider": {
     // Remote inference box (dev-ai) on the LAN — the REMOTE tier. dev-ai.local
-    // resolves to 192.168.7.235. Now a SINGLE-MODEL SERVER (the prior multi-model
-    // list was experimentation cruft). Migrating Ollama → vLLM for performance:
-    // baseURL stays :11434/v1 (Ollama) until vLLM is live, then flip to
-    // http://dev-ai.local:8000/v1 (see HANDOFF-vllm-migration.md, Phase 4).
+    // resolves to 192.168.7.235. A SINGLE-MODEL SERVER: vLLM on :8000 since the
+    // 2026-10-20 cutover. dev-ai's Ollama (:11434) is CPU-only now but still answers
+    // for workhorse:latest, so a client left on :11434 works, slowly, at a 32K window.
     //
-    // ⚠️ While on Ollama, the rig MUST be started with OLLAMA_CONTEXT_LENGTH=32768
-    //    (or num_ctx 32768 in a Modelfile). At Ollama's 4K default, OpenCode's tool
-    //    definitions overflow and the model just chats — tool-calling silently
-    //    breaks. If the locked-down Mac can't reach dev-ai.local directly, tunnel:
-    //    ssh -N -L 11434:dev-ai.local:11434 dev-ai  → baseURL 127.0.0.1:11434/v1.
-    //    See guides/mac-mlx-opencode.md → "Remote Ollama".
+    // If the locked-down Mac can't reach dev-ai.local directly, tunnel:
+    //    ssh -N -L 8000:dev-ai.local:8000 dev-ai  → baseURL 127.0.0.1:8000/v1.
+    //    See guides/mac-mlx-opencode.md → "Remote vLLM".
     "dev-ai": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "dev-ai (remote, single model)",
-      "options": { "baseURL": "http://dev-ai.local:11434/v1" },
+      "options": { "baseURL": "http://dev-ai.local:8000/v1", "apiKey": "{env:VLLM_API_KEY}" },
       "models": {
-        // Clients name the workhorse:latest ALIAS, never a concrete model: dev-ai
-        // re-points the alias when the primary model changes (okf-knowledge
+        // Clients name the `workhorse` served name, never a concrete model: dev-ai
+        // swaps the weights behind it when the primary model changes (okf-knowledge
         // infra/model-upgrade-playbook.md), so no client edit is needed. Currently
-        // -> qwen3.8:27b-tools, num_ctx 131072. ids match the server exactly (colon).
-        "workhorse:latest":  { "name": "Workhorse (remote, dev-ai primary)", "tools": true }
+        // -> nvidia/Qwen3.8-27B-NVFP4, max_model_len 131072. The id matches vLLM's
+        // --served-model-name exactly (no :latest).
+        "workhorse":  { "name": "Workhorse (remote, dev-ai primary)", "tools": true }
       }
     },
     // On-device MLX server (Apple Silicon only — the M4 Pro/24GB MacBook). Fully
